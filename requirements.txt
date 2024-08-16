@@ -1,0 +1,6 @@
+flask
+pyjwt
+cryptography
+requests
+streaming_form_data
+starlette
