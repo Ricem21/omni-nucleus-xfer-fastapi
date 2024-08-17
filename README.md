@@ -12,4 +12,9 @@ docker compose up -d
 $ curl http://localhost:8000/status
 {"status":"OK"}
 
+
+
+curl -X POST  http://localhost:8000/files -H 'Filename: Mike.usd'
+
+
 TBD
