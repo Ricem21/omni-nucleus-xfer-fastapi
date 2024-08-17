@@ -16,6 +16,6 @@ ENV USD_LIB_DIR=${SCRIPT_DIR}/_build/linux-x86_64/release
 ENV LD_LIBRARY_PATH=${USD_LIB_DIR}
 ENV PYTHONPATH=/app:${USD_LIB_DIR}/python:${USD_LIB_DIR}/bindings-python
 
-
+COPY ./data /tmp
 COPY ./app /app
 
