@@ -34,12 +34,18 @@ app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
     allow_origins=["*"],
-    allow_methods=['POST', 'PUT', 'GET'],
-    allow_headers=['Authorization', 'Filename'],
+    #allow_methods=['POST', 'PUT', 'GET'],
+    #allow_headers=['Authorization', 'Filename'],
+    
+    allow_methods=["*"],
+    allow_headers=["*"],
+
+    
 )
 
 security = HTTPBearer()
-K8S_MNT_PATH = '/mnt/nucleus/data/'
+#K8S_MNT_PATH = '/mnt/nucleus/data/'
+K8S_MNT_PATH = '/tmp'
 
 
 # Initialize your app
@@ -75,29 +81,31 @@ def connect_server():
 def disconnect_server():
     client.sign_out(OvLink)
 
+def printd(text):
+    print(f'[{datetime.datetime.now()}] : {text} ', flush=True)
 
 # Function to upload a file from Nucleus Server
 def nucleus_upload(src_url: str, filename: str, overwrite: bool):
-    #carb.log_info(f'Start Uploading to Nucleus: {datetime.datetime.now()}')
+    printd(f'Start Uploading to Nucleus: ')
 
     try:
-        carb.log_info(f'Start Uploading to Nucleus: {datetime.datetime.now()}')
+        printd(f'Start Uploading to Nucleus: {src_url} {OvLink} {filename} {overwrite}')
 
         if overwrite:
             result = client.copy(src_url, OvLink + filename, client.CopyBehavior.OVERWRITE)
-            #carb.log_info(f'End Uploading to Nucleus: {datetime.datetime.now()}')
+            printd(f'End Uploading to Nucleus: {datetime.datetime.now()}')
             return f'File Upload Successful by Overwriting. Status: {result}, File: {filename}'
 
         result = client.copy(src_url, OvLink + filename, client.CopyBehavior.ERROR_IF_EXISTS)
 
         if result == client.Result.ERROR_ALREADY_EXISTS:
-            #carb.log_info(f'File already exists. Status: {result}, File: {filename}')
+            printd(f'File already exists. Status: {result}, File: {filename}')
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f'The file {filename} already exists on the server.'
             )
         elif result == client.Result.OK:
-            #carb.log_info(f'End Uploading to Nucleus: {datetime.datetime.now()}')
+            printd(f'End Uploading to Nucleus: {datetime.datetime.now()}')
             return f'File Upload Successful. Status: {result}, File: {filename}'
         else:
             raise HTTPException(
@@ -134,6 +142,7 @@ def remove_file(path):
 
 
 def validate_filename(request: Request) -> (str):
+    printd(f'{request.headers}')
     filename = request.headers.get('Filename')
     if not filename:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail='Filename header is missing')
@@ -148,25 +157,33 @@ async def handle_file_upload(request: Request, filepath: str):
     try:
         file_ = FileTarget(filepath)
         data = ValueTarget()
+        printd(f"Well at least here - {filepath} {data}")
         parser = StreamingFormDataParser(headers=request.headers)
+        printd("and probably not here")
         parser.register('file', file_)
         parser.register('data', data)
 
         async for chunk in request.stream():
+            printd("B")
             parser.data_received(chunk)
+            printd("#")
 
-        if not file_.multipart_filename:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail='File is missing')
+        printd("MOndky go home: mirice, look into this!!!!!")
+        #if not file_.multipart_filename:
+        #    raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail='File is missing')
+        
+        printd("final say")
     except ClientDisconnect:
-        print("Client Disconnected")
+        printd("Client Disconnected")
     except Exception as e:
-        print(f"Exception: {e.__class__.__name__}, Message: {str(e)}")
+        printd(f"Exception: {e.__class__.__name__}, Message: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='There was an error processing the file')
 
+    printd("really?")
 
 @app.get("/file")
 async def download(fileName, jobType, background_tasks: BackgroundTasks):
-    print(fileName, jobType)
+    printd(f'{fileName}, {jobType}')
 
     try:
         # download file locally using the path given in the fileName
@@ -182,11 +199,13 @@ async def download(fileName, jobType, background_tasks: BackgroundTasks):
 @app.post("/files")
 async def upload_file(request: Request):
 
-    print(f'Start Uploading to PVC: {datetime.datetime.now()}')
+    printd(f'Start Uploading to PVC: {datetime.datetime.now()}')
 
     filename = validate_filename(request)
 
     filepath = os.path.join(K8S_MNT_PATH, os.path.basename(filename))
+
+    printd(f'                      : {filepath}')
 
     await handle_file_upload(request, filepath)
 
@@ -202,6 +221,13 @@ async def upload_file(request: Request):
         os.remove(filepath)
 
     return {'result': 'File Upload Successful'}
+
+
+@app.get("/status")
+def read_status():
+    printd("got status request")
+    return {"detail": "OK"}
+
 
 
 #from fastapi import FastAPI
