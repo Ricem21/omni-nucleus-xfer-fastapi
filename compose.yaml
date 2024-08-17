@@ -1,0 +1,11 @@
+services:
+  onxf:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: onxf
+    container_name: onxf
+
+    ports:
+      - '8000:80'
+    restart: "no"
