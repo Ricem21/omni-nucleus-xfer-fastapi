@@ -23,9 +23,14 @@ from fastapi import BackgroundTasks, FastAPI
 
 
 
-OvLink = os.getenv('OMNI_URL')
-OvUser = os.getenv('OMNI_USER')
-OvToken = os.getenv('OMNI_PASS')
+#OvLink = os.getenv('OMNI_URL')
+#OvUser = os.getenv('OMNI_USER')
+#OvToken = os.getenv('OMNI_PASS')
+
+
+OvLink = 'omniverse://192.168.1.17/Projects/'
+OvUser = 'omniverse'
+OvToken = '123456'
 
 # Initialize your app
 app = FastAPI()
@@ -89,11 +94,13 @@ def nucleus_upload(src_url: str, filename: str, overwrite: bool):
     printd(f'Start Uploading to Nucleus: ')
 
     try:
-        printd(f'Start Uploading to Nucleus: {src_url} {OvLink} {filename} {overwrite}')
+        printd(f'Start Uploading to Nucleus: src_url -> {src_url}')
+        printd(f'                            dst     -> {OvLink+filename} {overwrite}')
 
+        overwrite = True
         if overwrite:
             result = client.copy(src_url, OvLink + filename, client.CopyBehavior.OVERWRITE)
-            printd(f'End Uploading to Nucleus: {datetime.datetime.now()}')
+            printd(f'End Uploading to Nucleus:  ')
             return f'File Upload Successful by Overwriting. Status: {result}, File: {filename}'
 
         result = client.copy(src_url, OvLink + filename, client.CopyBehavior.ERROR_IF_EXISTS)
@@ -105,7 +112,7 @@ def nucleus_upload(src_url: str, filename: str, overwrite: bool):
                 detail=f'The file {filename} already exists on the server.'
             )
         elif result == client.Result.OK:
-            printd(f'End Uploading to Nucleus: {datetime.datetime.now()}')
+            printd(f'End Uploading to Nucleus:')
             return f'File Upload Successful. Status: {result}, File: {filename}'
         else:
             raise HTTPException(
@@ -168,7 +175,7 @@ async def handle_file_upload(request: Request, filepath: str):
             parser.data_received(chunk)
             printd("#")
 
-        printd("MOndky go home: mirice, look into this!!!!!")
+        printd("Monkey go home: mirice, look into this!!!!!")
         #if not file_.multipart_filename:
         #    raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail='File is missing')
         
@@ -183,7 +190,8 @@ async def handle_file_upload(request: Request, filepath: str):
 
 @app.get("/file")
 async def download(fileName, jobType, background_tasks: BackgroundTasks):
-    printd(f'{fileName}, {jobType}')
+    printd(f'fileName -> {fileName}')
+    printd(f'jobType  ->  {jobType}')
 
     try:
         # download file locally using the path given in the fileName
@@ -199,7 +207,7 @@ async def download(fileName, jobType, background_tasks: BackgroundTasks):
 @app.post("/files")
 async def upload_file(request: Request):
 
-    printd(f'Start Uploading to PVC: {datetime.datetime.now()}')
+    printd(f'Start Uploading to PVC:  ')
 
     filename = validate_filename(request)
 
@@ -210,7 +218,7 @@ async def upload_file(request: Request):
     await handle_file_upload(request, filepath)
 
     try:
-        #carb.log_info(f'End Uploading to PVC: {datetime.datetime.now()}')
+        #carb.log_info(f'End Uploading to PVC:  ')
         nucleus_upload(filepath, filename, False)
     except HTTPException as e:
         raise e
@@ -218,7 +226,8 @@ async def upload_file(request: Request):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                     detail='There was an error uploading the file to Nucleus')
     finally:
-        os.remove(filepath)
+        printd('mirice fix this, need the remove')
+        #os.remove(filepath)
 
     return {'result': 'File Upload Successful'}
 
