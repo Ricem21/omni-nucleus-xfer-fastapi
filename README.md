@@ -1,14 +1,11 @@
 # TBD
 
-
-# Build
-
+## Requirments
+## Build
 ```
 docker build -t onxf .
 ```
-
-
-# Run
+## Run
 ```
 docker compose down
 docker compose up 
