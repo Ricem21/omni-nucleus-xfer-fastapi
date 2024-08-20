@@ -17,9 +17,7 @@ $ curl http://localhost:8000/status
 {"status":"OK"}
 ```
 
-```
-curl -X POST  http://localhost:8000/files -H 'Filename: Mike.usd'
-```
+### Upoad file
 
 ```
 curl -X POST  http://localhost:8000/files -H 'Filename: test-data00dfads.usd' -H 'Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryyEmKNDsBKjB7QEqu'
